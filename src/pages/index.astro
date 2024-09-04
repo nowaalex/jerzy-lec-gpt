@@ -1,0 +1,69 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+type Quote = {
+	/** Оригинальная цитата на польском */
+	originalQuote: string,
+
+	/** 
+	 * массив строк оригинальной цитаты из входных данных на польском, где каждая строка - одно слово из цитаты.
+	 * Говоря технически - результат вызова `originalQuote.split(" ")`
+	 * */
+    originalQuoteWordByWord: string[],
+
+	/**
+	 * буквальные переводы польских слов из `originalQuoteWordByWord` на русский.
+	 * Длина этого массива ВСЕГДА должна равняться длине массива `originalQuoteWordByWord`
+	 * Говоря технически - результат вызова `originalQuoteWordByWord.map(word => translate( word ))`,
+	 * где функция `translate` на вход принимает польское слово, а обратно отдает русский перевод (одно или несколько слов, разделенных пробелами)
+	 * */
+    polishToRussianWordByWord: string[],
+
+	/**
+	 * литературный перевод оригинальной цитаты на русский.
+	 * Возможный источник вдохновения: http://lib.ru/INPROZ/LEC/translations.txt.
+	 * */
+    polishToRussianLiterary: string,
+
+	/** 
+	 * объяснение оригинальной цитаты на русском языке,
+	 * раскрывающее смысл цитаты и поясняющая игру слов, юмор, метафоры и прочие содержащиеся в цитате литературные приемы
+	 * */
+    description: string
+};
+
+const quoteFiles = await Astro.glob('../assets/processed_quotes/*.ts');
+const quotes = quoteFiles.flatMap<Quote>( arr => arr.default ).sort(( a, b ) => a.originalQuote.localeCompare( b.originalQuote ));
+---
+
+<Layout title="Stanisław Jerzy Lec. Myśli nieuczesane">
+	<main class="prose prose-slate p-4 max-w-none">
+		<h1>Stanisław Jerzy Lec. Myśli nieuczesane</h1>
+		
+		{quotes.map( quote => {
+
+			if( quote.originalQuoteWordByWord.length !== quote.polishToRussianWordByWord.length ){
+				throw new Error( `Wrong word by word translation: ${quote.originalQuoteWordByWord.join(" ")}` );
+			}
+
+			return (
+				<>
+					<hr class="my-8 mx-[20vw]" />
+					<div>
+						<blockquote class="flex flex-wrap gap-x-2 gap-y-1">
+							{quote.originalQuoteWordByWord.map(( word, i ) => (
+								<div class="inline-grid gap-y-0.5">
+									<small class="text-slate-400 leading-none">{quote.polishToRussianWordByWord[i]}</small>
+									<b class="leading-none font-medium text-slate-800">{word}</b>
+								</div>
+							))}
+						</blockquote>
+						
+						<p>{quote.polishToRussianLiterary}</p>
+						<p class="italic text-slate-600">{quote.description}</p>
+					</div>
+				</>
+			)
+		})}
+	</main>
+</Layout>
